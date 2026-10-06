@@ -1,0 +1,1411 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pipette Controller V4 (Professional Edition)</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        :root {
+            --bg-body: #f8fafc;
+            --bg-surface: #ffffff;
+            --text-main: #334155;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --primary: #0ea5e9;
+            --primary-hover: #0284c7;
+            --success: #10b981;
+            --danger: #ef4444;
+            --danger-hover: #dc2626;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Layout */
+        .sidebar {
+            width: 280px;
+            background: var(--bg-surface);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            background-color: var(--bg-body);
+            position: relative;
+        }
+
+        .topbar {
+            padding: 20px 40px;
+            background: var(--bg-surface);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .content-container {
+            padding: 40px;
+            max-width: 900px;
+            margin: 0 auto;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            font-size: 20px;
+            font-weight: 700;
+            color: #0f172a;
+            margin: 0 0 30px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        h1 svg {
+            width: 24px;
+            height: 24px;
+            color: var(--primary);
+        }
+
+        h2 {
+            font-size: 18px;
+            font-weight: 600;
+            margin: 0 0 20px 0;
+            color: #1e293b;
+        }
+
+        /* Sidebar Navigation */
+        .nav-item {
+            padding: 12px 16px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            color: var(--text-muted);
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-item:hover {
+            background: #f1f5f9;
+            color: var(--text-main);
+        }
+
+        .nav-item.active {
+            background: #e0f2fe;
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        /* Connection Status */
+        .conn-box {
+            margin-top: auto;
+            padding: 15px;
+            background: #f8fafc;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            text-align: center;
+        }
+
+        .status-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #cbd5e1;
+            margin-right: 6px;
+        }
+
+        .status-dot.connected {
+            background: var(--success);
+            box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
+        }
+
+        /* Generic UI Elements */
+        .card {
+            background: var(--bg-surface);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: var(--shadow);
+            margin-bottom: 24px;
+            border: 1px solid var(--border-color);
+        }
+
+        button {
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            padding: 12px 20px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+        }
+
+        .btn-danger {
+            background: white;
+            color: var(--danger);
+            border: 1px solid var(--danger);
+        }
+
+        .btn-danger:hover {
+            background: #fef2f2;
+        }
+
+        .btn-outline {
+            background: white;
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-outline:hover {
+            background: #f8fafc;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            font-size: 15px;
+            font-family: 'Inter';
+            box-sizing: border-box;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        /* Huge Action Button */
+        .action-hero {
+            background: white;
+            border: 2px dashed var(--border-color);
+            border-radius: 12px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease, box-shadow 0.4s ease;
+            margin-bottom: 20px;
+        }
+
+        .action-hero:hover {
+            background: #e0f2fe;
+            border-color: var(--primary);
+        }
+
+        .action-hero:active {
+            transform: scale(0.99);
+            background: #bae6fd;
+        }
+
+        .action-hero.disabled {
+            opacity: 0.5;
+            pointer-events: none;
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+        }
+
+        .hero-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+
+        .hero-subtitle {
+            font-size: 14px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        /* State specific hero colors */
+        .action-hero[data-state="1"] {
+            background: #ecfdf5;
+            border-color: #a7f3d0;
+        }
+
+        .action-hero[data-state="1"] .hero-title {
+            color: var(--success);
+        }
+
+        .action-hero[data-state="2"] {
+            background: #fdf2f8;
+            border-color: #fbcfe8;
+        }
+
+        .action-hero[data-state="2"] .hero-title {
+            color: #db2777;
+        }
+
+        .action-hero[data-state="3"] {
+            background: #fffbeb;
+            border-color: #fde68a;
+        }
+
+        .anim-aspirating {
+            box-shadow: 0 0 0 15px rgba(14, 165, 233, 0.4) !important;
+            border-color: #38bdf8 !important;
+        }
+
+        .anim-dispensing {
+            box-shadow: 0 0 0 15px rgba(219, 39, 119, 0.4) !important;
+            border-color: #f472b6 !important;
+        }
+
+        /* Panels */
+        .panel {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .panel.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Progress Dashboard */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 15px;
+        }
+
+        .stat-box {
+            background: #f8fafc;
+            padding: 16px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-top: 4px;
+        }
+
+        .progress-track {
+            width: 100%;
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--primary);
+            transition: width 0.3s ease;
+        }
+
+        /* Toggle */
+        .toggle-group {
+            display: flex;
+            background: #f1f5f9;
+            padding: 4px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+        }
+
+        .toggle-btn {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-radius: 6px;
+            transition: 0.2s;
+        }
+
+        .toggle-btn.active {
+            background: white;
+            color: var(--text-main);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Jog Grid */
+        .jog-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .btn-jog {
+            height: 60px;
+            font-size: 18px;
+        }
+
+        .cal-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .cal-row:last-child {
+            border-bottom: none;
+        }
+
+        .log-box {
+            font-family: 'Consolas', monospace;
+            font-size: 12px;
+            color: #475569;
+            background: #f8fafc;
+            padding: 12px;
+            border-radius: 8px;
+            height: 120px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            margin-top: 20px;
+        }
+
+        .log-app {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .flex-row {
+            display: flex;
+            gap: 15px;
+        }
+
+        .flex-col {
+            flex: 1;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="sidebar">
+        <h1>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+            </svg>
+            AutoPipette
+        </h1>
+
+        <div class="nav-item active" onclick="switchTab('operation', this)">▶ Run Protocol</div>
+        <div class="nav-item" onclick="switchTab('calibration', this)">⚙️ Calibration</div>
+        <div class="nav-item" onclick="switchTab('settings', this)">🛠️ Settings</div>
+
+        <div class="conn-box">
+            <div
+                style="font-size: 13px; font-weight: 600; margin-bottom: 10px; display: flex; align-items: center; justify-content: center;">
+                <span class="status-dot" id="connIndicator"></span>
+                <span id="connStatusText">Disconnected</span>
+            </div>
+            <button class="btn-primary" style="width: 100%;" id="btnConnect">Connect via USB</button>
+            <button class="btn-danger" style="width: 100%; display: none; margin-top: 10px;"
+                id="btnDisconnect">Disconnect</button>
+            <div style="margin-top: 10px;">
+                <label
+                    style="display: flex; align-items: center; gap: 5px; justify-content: center; font-size: 11px; margin: 0; cursor: pointer;">
+                    <input type="checkbox" id="chkAutoConnect" checked style="width: auto;"> Auto-connect
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="topbar">
+            <div style="font-weight: 600; color: var(--text-muted);" id="topbarTitle">Run Protocol</div>
+            <div style="font-size: 13px; color: var(--text-muted);">Active Multiplier: <span id="activeMultiplier"
+                    style="font-weight: 700; color: var(--primary);">-</span> steps/µL</div>
+        </div>
+
+        <div class="content-container">
+            <!-- OPERATION PANEL -->
+            <div id="operation" class="panel active">
+                <div class="card">
+                    <h2>Protocol Configuration</h2>
+                    <div class="toggle-group">
+                        <div class="toggle-btn active" id="optFull" onclick="setMode('FULL')">Full Volume Stroke</div>
+                        <div class="toggle-btn" id="optCustom" onclick="setMode('CUSTOM')">Custom Aliquot Repetition</div>
+                        <div class="toggle-btn" id="optVariable" onclick="setMode('VARIABLE')">Variable Pipette Mode</div>
+                    </div>
+                    <div id="customInputs" class="flex-row" style="display: none;">
+                        <div class="flex-col">
+                            <label>Total Aspirate Volume (µL)</label>
+                            <input type="number" id="maxVol" placeholder="e.g. 50" onchange="saveUIVols()">
+                        </div>
+                        <div class="flex-col">
+                            <label>Aliquot Dispense Volume (µL)</label>
+                            <input type="number" id="targetVol" placeholder="e.g. 10" onchange="saveUIVols()">
+                        </div>
+                    </div>
+                    <div id="variableInputs" class="flex-row" style="display: none; justify-content: center; margin-top: 15px;">
+                        <div class="flex-col" style="width: 100%; max-width: 300px;">
+                            <label style="text-align: center; font-size: 14px;">Set Volume (µL)</label>
+                            <input type="number" id="varVol" placeholder="e.g. 50" style="text-align: center; font-size: 24px; font-weight: bold; padding: 12px;" onchange="saveUIVols()">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h2 style="margin: 0;">Execution</h2>
+                        <div style="display: flex; gap: 10px;">
+                            <button class="btn-outline" style="padding: 8px 15px; font-size: 12px;"
+                                onclick="returnToHome()">Back to Home</button>
+                            <button class="btn-outline" style="padding: 8px 15px; font-size: 12px; border-color: var(--primary); color: var(--primary);"
+                                onclick="preWetTip()">Pre-Wet Tip</button>
+                            <button class="btn-danger" style="padding: 8px 15px; font-size: 12px;"
+                                onclick="purgeLiquid()">Purge Tip</button>
+                        </div>
+                    </div>
+
+                    <div class="action-hero disabled" id="btnSpaceAction" onclick="handleSpaceAction()" data-state="0">
+                        <div class="hero-title" id="wfTitle">Connect to Begin</div>
+                        <div class="hero-subtitle" id="wfSubtitle">USB Connection Required</div>
+                    </div>
+                    
+                    <div id="variableControls" style="display: none; flex-direction: column; gap: 10px; margin-top: 15px;">
+                        <button class="btn-primary" id="btnVarAsp" style="padding: 15px; font-size: 16px; border-radius: 8px;" onclick="varAspirate()">⬆️ Aspirate</button>
+                        <button class="btn-danger" id="btnVarDisp" style="padding: 15px; font-size: 16px; border-radius: 8px;" onclick="varDispense()">⬇️ Dispense & Blowout</button>
+                        <button class="btn-outline" id="btnVarPrep" style="padding: 15px; font-size: 16px; border-radius: 8px; border-color: var(--primary); color: var(--primary);" onclick="sendCmd('PREP')">🔄 Return to Ready (First Stop)</button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>Progress Dashboard</h2>
+                    <div class="dashboard-grid">
+                        <div class="stat-box">
+                            <label>Contained Volume</label>
+                            <div class="stat-value" id="dispVolumeText">0.0 µL</div>
+                        </div>
+                        <div class="stat-box">
+                            <label>Remaining Aliquots</label>
+                            <div class="stat-value" id="dispRemainingText">0 reps</div>
+                        </div>
+                        <div class="stat-box" style="grid-column: span 2;">
+                            <label>Last Limit Switch Hit Position (Drift Monitor)</label>
+                            <div class="stat-value" id="switchHitText" style="font-size: 18px; color: var(--text-muted);">-</div>
+                        </div>
+                    </div>
+                    <label style="margin-top: 10px;">Aspirate Progress</label>
+                    <div class="progress-track">
+                        <div class="progress-fill" id="progBar" style="width: 0%;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CALIBRATION PANEL -->
+            <div id="calibration" class="panel">
+                <div class="card">
+                    <h2>Positional Calibration</h2>
+                    <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 20px;">Use the jog buttons to
+                        align the linear actuator, then save the hard stop limits.</p>
+                    <div class="jog-grid">
+                        <button class="btn-outline btn-jog" onmousedown="sendCmd('REV')" onmouseup="sendCmd('STOP')">⟲
+                            Move UP</button>
+                        <button class="btn-outline btn-jog" onmousedown="sendCmd('FWD')"
+                            onmouseup="sendCmd('STOP')">Move DOWN ⟳</button>
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                        <button class="btn-danger" style="flex:1;" onclick="sendCmd('STOP')">EMERGENCY STOP</button>
+                        <button class="btn-primary" style="flex: 1; padding: 12px; font-weight: 600;"
+                                onclick="autoHome()">🔧 Auto-Home (Restore Sync)</button>
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                        <button class="btn-outline" style="flex:1;" onclick="if(confirm('This runs a 20x blocking loop to check limit switch consistency. Proceed?')){sendCmd('DRIFT_CHECK');}">Drift Check (20x)</button>
+                    </div>
+
+                    <div class="cal-row">
+                        <div>
+                            <div style="font-weight: 600;">1. Open Position (Zero)</div>
+                            <div style="font-size: 12px; color: var(--text-muted);">Topmost position. Used as reference
+                                zero.</div>
+                        </div>
+                        <div style="display: flex; gap: 5px;">
+                            <button class="btn-outline" style="font-size: 12px; padding: 6px 12px;"
+                                onclick="sendCmd('RET_ZERO')">Go To</button>
+                            <button class="btn-outline" style="font-size: 12px; padding: 6px 12px;"
+                                onclick="sendCmd('SYNC_POS:0')">Sync</button>
+                            <button class="btn-outline"
+                                style="font-size: 12px; padding: 6px 12px; border-color: var(--primary); color: var(--primary);"
+                                onclick="sendCmd('ZERO')">Save</button>
+                        </div>
+                    </div>
+                    <div class="cal-row">
+                        <div>
+                            <div style="font-weight: 600;">2. First Stop</div>
+                            <div style="font-size: 12px; color: var(--text-muted);">Start of aspiration range.</div>
+                        </div>
+                        <div style="display: flex; gap: 5px;">
+                            <button class="btn-outline" style="font-size: 12px; padding: 6px 12px;"
+                                onclick="sendCmd('PREP')">Go To</button>
+                            <button class="btn-outline" style="font-size: 12px; padding: 6px 12px;"
+                                onclick="sendCmd('SYNC_POS:1')">Sync</button>
+                            <button class="btn-outline"
+                                style="font-size: 12px; padding: 6px 12px; border-color: var(--primary); color: var(--primary);"
+                                onclick="sendCmd('SET1')">Save</button>
+                        </div>
+                    </div>
+                    <div class="cal-row" style="border-bottom: none;">
+                        <div>
+                            <div style="font-weight: 600;">3. Blowout</div>
+                            <div style="font-size: 12px; color: var(--text-muted);">Lowest purge limit. Limit switch on D2.</div>
+                        </div>
+                        <div style="display: flex; gap: 5px; flex-wrap: wrap; justify-content: flex-end;">
+                            <button class="btn-outline" style="font-size: 12px; padding: 6px 12px;"
+                                onclick="sendCmd('BLOWOUT')">Go To</button>
+                            <button class="btn-outline" style="font-size: 12px; padding: 6px 12px;"
+                                onclick="sendCmd('SYNC_POS:2')">Sync</button>
+                            <button class="btn-outline"
+                                style="font-size: 12px; padding: 6px 12px; border-color: var(--primary); color: var(--primary);"
+                                onclick="sendCmd('SET2')">Save</button>
+                            <button class="btn-primary" style="font-size: 12px; padding: 6px 12px;"
+                                    onclick="autoBlowout()">🏠 Find & Save Blowout</button>
+                        </div>
+                    </div>
+                    <div style="margin-top: 12px; display: flex; align-items: center; gap: 10px; padding: 10px; background: #f8fafc; border-radius: 8px; border: 1px solid var(--border-color);">
+                        <label style="margin: 0; font-size: 12px; white-space: nowrap;">Overshoot past switch (steps):</label>
+                        <input type="number" id="blowoutOffset" value="100" min="0" max="500" style="width: 80px; padding: 4px 8px; font-size: 13px;">
+                        <button class="btn-outline" style="font-size: 12px; padding: 4px 10px;"
+                            onclick="sendCmd('SET2_OFFSET:' + document.getElementById('blowoutOffset').value)">Set</button>
+                        <span style="font-size: 11px; color: var(--text-muted);">Motor jogs until switch fires, then travels this many extra steps before saving blowout.</span>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h2 style="margin: 0;">Multi-Point Accuracy Calibration</h2>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span style="font-size: 12px; color: var(--text-muted); font-weight: 600;"
+                                id="calStatus">Inactive</span>
+                            <button class="btn-outline" style="font-size: 11px; padding: 4px 8px;" onclick="toggleCal()"
+                                id="btnCalToggle">Enable</button>
+                        </div>
+                    </div>
+                    <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 20px;">Interpolated compensation
+                        curve to correct for mechanical non-linearity.</p>
+
+                    <div id="calTableUI">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 80px; gap: 8px; margin-bottom: 10px;">
+                            <label>Target (µL)</label>
+                            <label>Measured (µL)</label>
+                            <label></label>
+                        </div>
+                        <div id="calRows"></div>
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-top: 15px;">
+                        <button class="btn-outline" style="font-size: 12px; padding: 6px 12px;" onclick="addCalRow()">+
+                            Add Point</button>
+                        <button class="btn-primary" style="font-size: 12px; padding: 6px 12px;"
+                            onclick="saveCalTable()">Save & Apply</button>
+                        <button class="btn-danger" style="font-size: 12px; padding: 6px 12px;"
+                            onclick="clearCalTable()">Clear All</button>
+                        <div style="margin-left: auto; display: flex; gap: 10px;">
+                            <button class="btn-outline" style="font-size: 12px; padding: 6px 12px;" onclick="exportCalibrationCSV()">Export CSV</button>
+                            <button class="btn-outline" style="font-size: 12px; padding: 6px 12px;" onclick="document.getElementById('csvFileInput').click()">Import CSV</button>
+                            <input type="file" id="csvFileInput" accept=".csv" style="display: none;" onchange="importCalibrationCSV(event)">
+                        </div>
+                    </div>
+                    <div id="calCurveInfo"
+                        style="margin-top: 15px; font-size: 12px; color: var(--text-muted); display: none;"></div>
+                </div>
+
+                <div class="card">
+                    <h2>Total Syringe Capacity</h2>
+                    <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 15px;">Used to calculate the
+                        steps/µL multiplier across the First Stop to Blowout range.</p>
+                    <div class="flex-row">
+                        <div style="flex: 2;">
+                            <input type="number" id="calCapacity" value="1000">
+                        </div>
+                        <div style="flex: 1;">
+                            <button class="btn-primary" style="width: 100%;"
+                                onclick="calculateMultiplier()">Calculate</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SETTINGS PANEL -->
+            <div id="settings" class="panel">
+                <div class="card">
+                    <h2>Motor Speed</h2>
+                    <label>Max Speed (steps/s): <span id="speedValue"
+                            style="color:var(--primary);font-weight:bold;">800</span></label>
+                    <input type="range" id="speedSlider" min="100" max="100000" value="800"
+                        style="width: 100%; margin-bottom: 20px;">
+
+                    <label>Deceleration (steps/s²): <span id="decelValue"
+                            style="color:var(--primary);font-weight:bold;">500</span></label>
+                    <input type="range" id="decelSlider" min="100" max="50000" value="500" style="width: 100%;">
+                </div>
+
+                <div class="card">
+                    <h2>Serial Console Log</h2>
+                    <div id="log" class="log-box"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // GLOBALS
+        let port;
+        let reader;
+        let writer;
+        let isConnected = false;
+
+        let runMode = 'FULL';
+        let wState = 0;
+
+        let devFactor = 4.5669;
+        let maxCapacity = 1000;
+        let isMoving = false; // Prevents interrupting strokes
+
+        // Chart Data
+        let containedVolume = 0;
+        let initialAspirateVol = 0;
+
+        // Multi-Point Calibration (Firmware handled)
+        let calEnabled = false;
+        let calPoints = []; // [{target, measured}]
+
+        function switchTab(tabId, el) {
+            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(p => p.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            el.classList.add('active');
+
+            let titles = { 'operation': 'Run Protocol', 'calibration': 'Calibration & Setup', 'settings': 'System Settings' };
+            document.getElementById('topbarTitle').innerText = titles[tabId];
+        }
+
+        function setMode(mode) {
+            runMode = mode;
+            document.getElementById('optFull').classList.toggle('active', mode === 'FULL');
+            document.getElementById('optCustom').classList.toggle('active', mode === 'CUSTOM');
+            document.getElementById('optVariable').classList.toggle('active', mode === 'VARIABLE');
+            
+            document.getElementById('customInputs').style.display = mode === 'CUSTOM' ? 'flex' : 'none';
+            document.getElementById('variableInputs').style.display = mode === 'VARIABLE' ? 'flex' : 'none';
+            
+            document.getElementById('btnSpaceAction').style.display = 'flex';
+            document.getElementById('variableControls').style.display = 'none';
+            
+            updateUIState();
+        }
+
+        function varAspirate() {
+            if (!isConnected) return;
+            let vol = parseFloat(document.getElementById('varVol').value);
+            if (!vol || vol <= 0) {
+                alert("Please enter a valid positive volume.");
+                return;
+            }
+            isMoving = true;
+            logApp(`Variable Mode: Aspirating ${vol} µL...`);
+            sendCmd(`VOL:${vol}`);
+        }
+
+        function varDispense() {
+            if (!isConnected) return;
+            isMoving = true;
+            logApp("Variable Mode: Dispensing and Blowing out...");
+            sendCmd('DISP');
+        }
+
+        function saveUIVols() {
+            if (isConnected) {
+                let asp = document.getElementById('maxVol').value || 0;
+                let disp = document.getElementById('targetVol').value || 0;
+                sendCmd(`SET_UIVOL:${asp},${disp}`);
+            }
+        }
+
+        function updateProgressUI() {
+            document.getElementById('dispVolumeText').innerText = containedVolume.toFixed(1) + " µL";
+            let v = runMode === 'FULL' ? maxCapacity : (parseFloat(document.getElementById('targetVol').value) || 1);
+            let reps = Math.floor(containedVolume / v);
+            document.getElementById('dispRemainingText').innerText = reps + " reps";
+
+            let pct = (containedVolume / (initialAspirateVol || maxCapacity)) * 100;
+            if (pct > 100) pct = 100;
+            if (pct < 0) pct = 0;
+            document.getElementById('progBar').style.width = pct + "%";
+        }
+
+        function updateUIState() {
+            const btn = document.getElementById('btnSpaceAction');
+            const title = document.getElementById('wfTitle');
+            const sub = document.getElementById('wfSubtitle');
+
+            btn.classList.remove('anim-aspirating', 'anim-dispensing');
+
+            if (!isConnected) {
+                btn.className = 'action-hero disabled';
+                btn.dataset.state = "0";
+                title.innerText = "Connect to Begin";
+                sub.innerText = "USB Connection Required";
+                return;
+            }
+
+            if (isMoving) {
+                btn.className = 'action-hero disabled';
+                btn.dataset.state = "0";
+                title.innerText = "Motor Moving...";
+                sub.innerText = "Please wait";
+                return;
+            }
+
+            btn.className = 'action-hero';
+
+            if (wState === 0) {
+                btn.dataset.state = "1";
+                title.innerText = "Prepare to Aspirate";
+                sub.innerText = "Move to 1st Stop [Space]";
+            } else if (wState === 1) {
+                btn.dataset.state = "1";
+                title.innerText = "Aspirate Liquid";
+                if (runMode === 'FULL') {
+                    sub.innerText = "Draw maximum volume [Space]";
+                } else {
+                    let v = document.getElementById('maxVol').value || 0;
+                    sub.innerText = `Draw ${v} µL [Space]`;
+                }
+            } else if (wState === 2) {
+                let v = runMode === 'FULL' ? containedVolume : (parseFloat(document.getElementById('targetVol').value) || 0);
+
+                if (runMode === 'CUSTOM' && initialAspirateVol === v && containedVolume === v) {
+                    btn.dataset.state = "2";
+                    title.innerText = `Dispense & Blowout (${v} µL)`;
+                    sub.innerText = "Aspirate and Dispense are equal [Space]";
+                } else if (containedVolume >= v && v > 0) {
+                    let reps = Math.floor(containedVolume / v);
+                    btn.dataset.state = "2";
+                    title.innerText = runMode === 'FULL' ? "Dispense All" : `Dispense Aliquot (${v} µL)`;
+                    sub.innerText = runMode === 'FULL' ? "Empty Syringe [Space]" : `${reps} aliquots remaining [Space]`;
+                } else {
+                    btn.dataset.state = "3";
+                    title.innerText = "Purge Remaining";
+                    sub.innerText = `Blowout ${containedVolume.toFixed(1)} µL [Space]`;
+                }
+            } else if (wState === 3) {
+                btn.dataset.state = "1";
+                title.innerText = "Return to 1st Stop";
+                sub.innerText = "Prepare for next cycle [Space]";
+            }
+        }
+
+                function handleSpaceAction() {
+            if (!isConnected || isMoving) return;
+            const btn = document.getElementById('btnSpaceAction');
+
+            if (wState === 0) {
+                // Return to First Stop
+                sendCmd("PREP");
+                isMoving = true;
+                wState = 1;
+            } else if (wState === 1) {
+                // Aspirate
+                if (runMode === 'FULL') {
+                    sendCmd("ASP");
+                    isMoving = true;
+                    btn.classList.add('anim-aspirating');
+                    containedVolume = maxCapacity;
+                    initialAspirateVol = maxCapacity;
+                } else if (runMode === 'VARIABLE') {
+                    let v = parseFloat(document.getElementById('varVol').value) || 50;
+                    sendCmd("VOL:" + v.toFixed(3));
+                    isMoving = true;
+                    btn.classList.add('anim-aspirating');
+                    containedVolume = v;
+                    initialAspirateVol = v;
+                } else { // CUSTOM
+                    let v = parseFloat(document.getElementById('maxVol').value) || 50;
+                    sendCmd("VOL:" + v.toFixed(3));
+                    isMoving = true;
+                    btn.classList.add('anim-aspirating');
+                    containedVolume = v;
+                    initialAspirateVol = v;
+                }
+                wState = 2;
+            } else if (wState === 2) {
+                // Dispense
+                if (runMode === 'FULL' || runMode === 'VARIABLE') {
+                    sendCmd("DISP");
+                    isMoving = true;
+                    btn.classList.add('anim-dispensing');
+                    containedVolume = 0;
+                    wState = 3; 
+                } else { // CUSTOM
+                    let v_disp = parseFloat(document.getElementById('targetVol').value) || 10;
+                    let v_asp = parseFloat(document.getElementById('maxVol').value) || 50;
+
+                    if (v_asp === v_disp && containedVolume === v_asp) {
+                        // Equal volumes: full blowout
+                        sendCmd("DISP"); 
+                        isMoving = true;
+                        containedVolume = 0;
+                        wState = 3;
+                    } else if (containedVolume >= v_disp && v_disp > 0) {
+                        sendCmd("DISP_VOL:" + v_disp.toFixed(3));
+                        isMoving = true;
+                        containedVolume -= v_disp;
+                        
+                        // Stay in wState 2 so the NEXT spacebar press handles the final blowout
+                        if (containedVolume <= 0.001) {
+                            containedVolume = 0;
+                        }
+                    } else {
+                        // Purge remaining sub-aliquot amount
+                        sendCmd("DISP");
+                        isMoving = true;
+                        containedVolume = 0;
+                        wState = 3; 
+                    }
+                    btn.classList.add('anim-dispensing');
+                }
+            } else if (wState === 3) {
+                // Motor is at blowout position. Return to 1st stop.
+                sendCmd("PREP");
+                isMoving = true;
+                wState = 1;
+            }
+            updateProgressUI();
+            updateUIState();
+        }
+
+        function purgeLiquid() {
+            if (!isConnected) return;
+            sendCmd("DISP");
+            isMoving = true;
+            document.getElementById('btnSpaceAction').classList.add('anim-dispensing');
+            containedVolume = 0;
+            initialAspirateVol = 0;
+            wState = 0;
+            updateProgressUI();
+            updateUIState();
+        }
+
+        function preWetTip() {
+            if (!isConnected) return;
+            if (wState !== 1) {
+                alert("Please go to 1st Stop (Prepare to Aspirate) before pre-wetting.");
+                return;
+            }
+            sendCmd("PREWET");
+            isMoving = true;
+            document.getElementById('btnSpaceAction').classList.add('anim-aspirating');
+            containedVolume = 0;
+            initialAspirateVol = 0;
+            wState = 1;
+            updateProgressUI();
+            updateUIState();
+        }
+
+        function returnToHome() {
+            if (!isConnected) return;
+            sendCmd("RET_ZERO");
+            isMoving = true;
+            containedVolume = 0;
+            initialAspirateVol = 0;
+            wState = 0;
+            updateProgressUI();
+            updateUIState();
+        }
+
+        // Setup & Connections
+        window.onload = () => {
+            const autoConnectChecked = localStorage.getItem('autoConnect') !== 'false';
+            document.getElementById('chkAutoConnect').checked = autoConnectChecked;
+            document.getElementById('chkAutoConnect').addEventListener('change', (e) => {
+                localStorage.setItem('autoConnect', e.target.checked);
+            });
+
+            if (autoConnectChecked) {
+                navigator.serial.getPorts().then((ports) => {
+                    if (ports.length > 0) {
+                        logApp("Auto-connecting...");
+                        connectToPort(ports[0]);
+                    }
+                });
+            }
+
+            document.getElementById('speedSlider').addEventListener('change', (e) => {
+                sendCmd("SPEED:" + e.target.value);
+                document.getElementById('speedValue').innerText = e.target.value;
+            });
+            document.getElementById('speedSlider').addEventListener('input', (e) => document.getElementById('speedValue').innerText = e.target.value);
+
+            document.getElementById('decelSlider').addEventListener('change', (e) => {
+                sendCmd("DECEL:" + e.target.value);
+                document.getElementById('decelValue').innerText = e.target.value;
+            });
+            document.getElementById('decelSlider').addEventListener('input', (e) => document.getElementById('decelValue').innerText = e.target.value);
+
+            addCalRow('10', '');
+            addCalRow('50', '');
+            addCalRow('100', '');
+        };
+
+        document.addEventListener('keydown', function (event) {
+            if (event.code === 'Space' && document.activeElement.tagName !== 'INPUT') {
+                event.preventDefault();
+                if (!event.repeat) {
+                    handleSpaceAction();
+                }
+            }
+        });
+
+        function logApp(msg) {
+            const logBox = document.getElementById('log');
+            logBox.innerHTML += `<div class="log-app">Host: ${msg}</div>`;
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+
+        function logHardware(msg) {
+            const logBox = document.getElementById('log');
+            logBox.innerHTML += `<div>Device: ${msg}</div>`;
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+
+        document.getElementById('btnConnect').addEventListener('click', async () => {
+            try {
+                const portReq = await navigator.serial.requestPort();
+                await connectToPort(portReq);
+            } catch (e) {
+                logApp("Connection failed: " + e);
+            }
+        });
+
+        document.getElementById('btnDisconnect').addEventListener('click', async () => {
+            isConnected = false;
+            updateConnectionUI();
+            if (reader) await reader.cancel();
+        });
+
+        async function connectToPort(selectedPort) {
+            port = selectedPort;
+            try {
+                await port.open({ baudRate: 115200 });
+                isConnected = true;
+                window.telemetryLoaded = false;
+                updateConnectionUI();
+                logApp("Connected to Arduino");
+
+                const textDecoder = new TextDecoderStream();
+                const readableStreamClosed = port.readable.pipeTo(textDecoder.writable);
+                reader = textDecoder.readable.getReader();
+
+                writer = port.writable.getWriter();
+                const textEncoder = new TextEncoder();
+                const oldWrite = writer.write.bind(writer);
+                writer.write = async (str) => { await oldWrite(textEncoder.encode(str)); };
+
+                // Wait 2 seconds for Arduino bootloader to finish before sending handshake
+                setTimeout(() => {
+                    sendCmd("GET_FACTOR");
+                    sendCmd("GET_STATE");
+                    sendCmd("GET_CAL");
+                }, 2000);
+
+                readLoop();
+            } catch (e) {
+                logApp("Error opening port: " + e);
+            }
+        }
+
+        function updateConnectionUI() {
+            document.getElementById('btnConnect').style.display = isConnected ? 'none' : 'block';
+            document.getElementById('btnDisconnect').style.display = isConnected ? 'block' : 'none';
+
+            const dot = document.getElementById('connIndicator');
+            const text = document.getElementById('connStatusText');
+            if (isConnected) {
+                dot.classList.add('connected');
+                text.innerText = "Connected";
+            } else {
+                dot.classList.remove('connected');
+                text.innerText = "Disconnected";
+            }
+            updateUIState();
+        }
+
+        async function readLoop() {
+            let buffer = "";
+            while (isConnected) {
+                try {
+                    const { value, done } = await reader.read();
+                    if (done) break;
+                    if (value) {
+                        buffer += value;
+                        let lines = buffer.split('\n');
+                        buffer = lines.pop();
+                        for (let line of lines) {
+                            let trimmedLine = line.trim();
+                            if (trimmedLine) {
+                                if (trimmedLine.startsWith("FACTOR_SAVED:") || trimmedLine.startsWith("FACTOR:")) {
+                                    devFactor = parseFloat(trimmedLine.split(":")[1]);
+                                    document.getElementById("activeMultiplier").innerText = devFactor.toFixed(4);
+                                } else if (trimmedLine === "DONE") {
+                                    // Motor finished moving — unlock the UI
+                                    isMoving = false;
+                                    document.getElementById('btnSpaceAction').classList.remove('anim-aspirating', 'anim-dispensing');
+                                    updateUIState();
+                                } else if (trimmedLine.startsWith("STATE:")) {
+                                    // STATE: pos,stop1,stop2,factor,capacity,speed,decel,backlash
+                                    let parts = trimmedLine.substring(6).split(",");
+                                    if (parts.length >= 7) {
+                                        let devPos = parseInt(parts[0]);
+                                        let devStop1 = parseInt(parts[1]);
+                                        devFactor = parseFloat(parts[3]);
+                                        maxCapacity = parseFloat(parts[4]);
+
+                                        let speed = parseFloat(parts[5]);
+                                        let decel = parseFloat(parts[6]);
+                                        if (!window.telemetryLoaded) {
+                                            window.telemetryLoaded = true;
+                                            document.getElementById("calCapacity").value = maxCapacity;
+
+                                            document.getElementById("speedSlider").value = speed;
+                                            document.getElementById("speedValue").innerText = Math.round(speed);
+
+                                            document.getElementById("decelSlider").value = decel;
+                                            document.getElementById("decelValue").innerText = Math.round(decel);
+
+                                            document.getElementById("activeMultiplier").innerText = devFactor.toFixed(4);
+                                        }
+
+                                        // Auto-sync wState based on physical motor position ONLY when first connected
+                                        if (wState === 0) {
+
+                                            if (devPos === 0) {
+                                                wState = 2; // At home, ready to dispense
+                                                containedVolume = maxCapacity;
+                                            } else if (devPos === devStop1) {
+                                                wState = 1; // At 1st stop, ready to aspirate
+                                                containedVolume = 0;
+                                            }
+                                        }
+
+                                        updateProgressUI();
+                                        updateUIState();
+                                    }
+                                } else if (trimmedLine.startsWith("CAL_DATA:")) {
+                                    populateCalFromDevice(trimmedLine.substring(9));
+                                } else if (trimmedLine.startsWith("CAL_ENABLE_SET:")) {
+                                    let en = trimmedLine.split(":")[1].trim() === "1";
+                                    calEnabled = en;
+                                    document.getElementById('calStatus').innerText = calEnabled ? '✅ Active' : 'Inactive';
+                                    document.getElementById('btnCalToggle').innerText = calEnabled ? 'Disable' : 'Enable';
+                                } else if (trimmedLine.startsWith("SWITCH_HIT:")) {
+                                    let hitPos = parseInt(trimmedLine.split(":")[1]);
+                                    document.getElementById("switchHitText").innerText = "Step " + hitPos;
+                                    document.getElementById("switchHitText").style.color = "var(--primary)";
+                                } else if (trimmedLine.startsWith("DRIFT_CORRECTED:")) {
+                                    let drift = parseInt(trimmedLine.split(":")[1]);
+                                    logApp("🔧 Auto-Corrected " + drift + " skipped steps!");
+                                } else if (trimmedLine === "HOME_OK") {
+                                    logApp("🏠 Auto-home complete! Zero position set.");
+                                } else if (trimmedLine === "HOME_ABORTED") {
+                                    logApp("⚠️ Auto-home aborted.");
+                                }
+                                logHardware(trimmedLine);
+                            }
+                        }
+                    }
+                } catch (error) {
+                    logApp("Read error: " + error);
+                    break;
+                }
+            }
+            reader.releaseLock();
+            writer.releaseLock();
+            await port.close();
+            isConnected = false;
+            updateConnectionUI();
+            logApp("Port closed.");
+        }
+
+        async function sendCmd(cmd) {
+            if (writer && isConnected) {
+                try {
+                    await writer.write(cmd + "\n");
+                    logApp(cmd);
+                } catch (e) {
+                    logApp("Error sending cmd: " + e);
+                }
+            } else {
+                logApp("Not connected. Cannot send: " + cmd);
+            }
+        }
+
+        // ENG TOOLS
+        function calculateMultiplier() {
+            let capacity = parseFloat(document.getElementById("calCapacity").value);
+            if (capacity > 0) sendCmd("SET_CAPACITY:" + capacity);
+            else alert("Enter a valid syringe capacity.");
+        }
+
+        function autoHome() {
+            if (!isConnected) { alert("Connect first!"); return; }
+            if (!confirm("This will move the motor DOWN until the limit switch is triggered to sync its position.\nMake sure the path is clear.\n\nProceed?")) return;
+            logApp("Auto-homing started...");
+            sendCmd("AUTO_HOME");
+        }
+
+        function autoBlowout() {
+            if (!isConnected) { alert("Connect first!"); return; }
+            const offset = document.getElementById('blowoutOffset').value || 15;
+            sendCmd("SET2_OFFSET:" + offset);
+            if (!confirm("WARNING: This overwrites your Blowout Calibration!\n\nMotor will jog forward until the blowout limit switch fires, then travel " + offset + " extra steps past it and SAVE that as the Blowout position.\n\nOnly use this during calibration. If you just turned the machine on, use the large 'Auto-Home (Restore Sync)' button instead.\n\nProceed?")) return;
+            isMoving = true;
+            logApp("Auto-blowout homing started...");
+            sendCmd("AUTO_BLOWOUT");
+        }
+
+        let calRowId = 0;
+        function addCalRow(target, measured) {
+            calRowId++;
+            const container = document.getElementById('calRows');
+            const row = document.createElement('div');
+            row.id = 'calRow_' + calRowId;
+            row.className = 'cal-row-grid';
+            row.style.cssText = 'display: grid; grid-template-columns: 1fr 1fr 80px; gap: 8px; margin-bottom: 8px; align-items: center;';
+            row.innerHTML = `
+                <input type="number" placeholder="e.g. 50" value="${target || ''}" step="any">
+                <input type="number" placeholder="e.g. 53.8" value="${measured || ''}" step="any">
+                <button class="btn-outline" style="padding: 6px; color: var(--danger); border-color: var(--danger);" onclick="this.parentElement.remove()">✕ Remove</button>
+            `;
+            container.appendChild(row);
+        }
+
+        function exportCalibrationCSV() {
+            const rows = document.getElementById('calRows').children;
+            if (rows.length === 0) {
+                alert("No calibration points to export.");
+                return;
+            }
+            let csvContent = "data:text/csv;charset=utf-8,Target (uL),Measured (uL)\n";
+            for (let i = 0; i < rows.length; i++) {
+                let inputs = rows[i].getElementsByTagName('input');
+                let t = parseFloat(inputs[0].value);
+                let m = parseFloat(inputs[1].value);
+                if (!isNaN(t) && !isNaN(m)) {
+                    csvContent += t + "," + m + "\n";
+                }
+            }
+            var encodedUri = encodeURI(csvContent);
+            var link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "pipette_calibration.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function importCalibrationCSV(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const text = e.target.result;
+                const lines = text.split('\n');
+                
+                document.getElementById('calRows').innerHTML = '';
+                
+                let loaded = 0;
+                for (let i = 1; i < lines.length; i++) { 
+                    if (!lines[i].trim()) continue;
+                    let parts = lines[i].split(',');
+                    if (parts.length >= 2) {
+                        let t = parseFloat(parts[0]);
+                        let m = parseFloat(parts[1]);
+                        if (!isNaN(t) && !isNaN(m)) {
+                            addCalRow(t, m);
+                            loaded++;
+                        }
+                    }
+                }
+                
+                document.getElementById('csvFileInput').value = "";
+                
+                if (loaded > 0) {
+                    logApp("✅ Imported " + loaded + " points. Click 'Save & Apply' to upload.");
+                } else {
+                    alert("No valid data found in CSV.");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function saveCalTable() {
+            const rows = document.getElementById('calRows').children;
+            if (rows.length === 0) { alert("Add at least one calibration point."); return; }
+            let points = [];
+            for (let row of rows) {
+                let inputs = row.querySelectorAll('input');
+                let target = parseFloat(inputs[0].value);
+                let measured = parseFloat(inputs[1].value);
+                if (isNaN(target) || isNaN(measured) || target <= 0 || measured <= 0) {
+                    alert("All target and measured values must be positive numbers.");
+                    return;
+                }
+                points.push({ target, measured });
+            }
+            if (points.length > 20) { alert("Maximum 20 calibration points."); return; }
+
+            // Send to device
+            sendCmd("CLEAR_CAL");
+            for (let p of points) {
+                sendCmd(`ADD_CAL:${p.target},${p.measured}`);
+            }
+            sendCmd("SET_CAL_ENABLE:1");
+
+            calPoints = points;
+            calEnabled = true;
+            document.getElementById('calStatus').innerText = '✅ Active';
+            document.getElementById('btnCalToggle').innerText = 'Disable';
+            showCalCurve(points);
+            alert("Calibration saved to device memory.");
+        }
+
+        function showCalCurve(points) {
+            let info = document.getElementById('calCurveInfo');
+            let html = '<strong>Active Correction Curve:</strong><br><table style="width:100%; margin-top:8px; border-collapse:collapse;"><tr style="border-bottom:1px solid var(--border-color);"><th style="text-align:left;padding:4px;">Target</th><th style="text-align:left;padding:4px;">Measured</th><th style="text-align:left;padding:4px;">Correction</th><th style="text-align:left;padding:4px;">Effect</th></tr>';
+            for (let p of points) {
+                let corr = p.target / p.measured;
+                let pct = ((corr - 1) * 100).toFixed(1);
+                let color = corr > 1 ? 'var(--danger)' : (corr < 1 ? 'var(--success)' : 'var(--text-main)');
+                html += `<tr><td style="padding:4px;">${p.target} µL</td><td style="padding:4px;">${p.measured} µL</td><td style="padding:4px;">×${corr.toFixed(4)}</td><td style="padding:4px;color:${color};">${pct > 0 ? '+' : ''}${pct}%</td></tr>`;
+            }
+            html += '</table>';
+            info.innerHTML = html;
+            info.style.display = 'block';
+        }
+
+        function clearCalTable() {
+            if (!confirm("Clear all calibration data?")) return;
+            sendCmd("CLEAR_CAL");
+            sendCmd("SET_CAL_ENABLE:0");
+            calPoints = [];
+            calEnabled = false;
+            document.getElementById('calRows').innerHTML = '';
+            document.getElementById('calCurveInfo').style.display = 'none';
+            document.getElementById('calStatus').innerText = 'Inactive';
+            document.getElementById('btnCalToggle').innerText = 'Enable';
+        }
+
+        function toggleCal() {
+            calEnabled = !calEnabled;
+            sendCmd("SET_CAL_ENABLE:" + (calEnabled ? "1" : "0"));
+            document.getElementById('calStatus').innerText = calEnabled ? '✅ Active' : 'Inactive';
+            document.getElementById('btnCalToggle').innerText = calEnabled ? 'Disable' : 'Enable';
+        }
+
+        const defaultCalPoints = [
+            { target: 100, measured: 99.2 },
+            { target: 90, measured: 89.6 },
+            { target: 80, measured: 78.8 },
+            { target: 70, measured: 68.9 },
+            { target: 60, measured: 58.6 },
+            { target: 50, measured: 48.8 },
+            { target: 40, measured: 39.1 },
+            { target: 30, measured: 28.5 },
+            { target: 20, measured: 19.0 },
+            { target: 10, measured: 9.3 }
+        ];
+
+        function populateCalFromDevice(data) {
+            let parts = data.split(',');
+            let active = parts[0] === 'ON';
+            calEnabled = active;
+            document.getElementById('calStatus').innerText = active ? '🟢 Active' : 'Inactive';
+            document.getElementById('btnCalToggle').innerText = active ? 'Disable' : 'Enable';
+            document.getElementById('calRows').innerHTML = '';
+            
+            let points = [];
+            if (parts.length > 1) {
+                // Load from device
+                for (let i = 1; i < parts.length; i++) {
+                    if (!parts[i]) continue;
+                    let pair = parts[i].split(':');
+                    if (pair.length === 2) {
+                        let target = parseFloat(pair[0]);
+                        let measured = parseFloat(pair[1]);
+                        addCalRow(target.toFixed(1), measured.toFixed(1));
+                        points.push({ target, measured });
+                    }
+                }
+            } else {
+                // Preload default curve
+                for (let p of defaultCalPoints) {
+                    addCalRow(p.target.toFixed(1), p.measured.toFixed(1));
+                    points.push({ target: p.target, measured: p.measured });
+                }
+            }
+            calPoints = points;
+            if (points.length > 0) showCalCurve(points);
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,54 @@
+{
+  "Standard Taq": {
+    "idTemp": 95,
+    "idTime": 5,
+    "dTemp": 95,
+    "dTime": 30,
+    "aTemp": 60,
+    "aTime": 30,
+    "eTemp": 72,
+    "eTime": 60,
+    "feTemp": 72,
+    "feTime": 5,
+    "cycles": 30
+  },
+  "Fast PCR": {
+    "idTemp": 95,
+    "idTime": 2,
+    "dTemp": 95,
+    "dTime": 10,
+    "aTemp": 60,
+    "aTime": 10,
+    "eTemp": 72,
+    "eTime": 15,
+    "feTemp": 72,
+    "feTime": 2,
+    "cycles": 35
+  },
+  "Touchdown Base": {
+    "idTemp": 95,
+    "idTime": 3,
+    "dTemp": 95,
+    "dTime": 15,
+    "aTemp": 65,
+    "aTime": 20,
+    "eTemp": 72,
+    "eTime": 45,
+    "feTemp": 72,
+    "feTime": 5,
+    "cycles": 40
+  },
+  "default protocol": {
+    "idTemp": "95",
+    "idTime": "2",
+    "dTemp": "95",
+    "dTime": "30",
+    "aTemp": "60",
+    "aTime": "20",
+    "eTemp": "60",
+    "eTime": "10",
+    "feTemp": "72",
+    "feTime": "0",
+    "cycles": "40"
+  }
+}

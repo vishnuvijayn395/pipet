@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro Pipette Controller (V3 Manual)</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background-color: #121212; color: #e0e0e0; display: flex; justify-content: center; padding: 20px; margin: 0; }
+        .card { background-color: #1e1e1e; padding: 30px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 450px; text-align: center; }
+        h1 { color: #deff9a; font-size: 24px; margin-top: 0; }
+        button { width: 100%; padding: 15px; margin-top: 10px; border: none; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; transition: all 0.3s ease; }
+        
+        .btn-connect { background-color: #3a86ff; color: white; margin-bottom: 20px; }
+        .btn-jog { background-color: #444; color: white; border: 2px solid #555; }
+        .btn-jog:active { background-color: #666; }
+        .btn-stop { background-color: #ff0054; color: white; font-size: 20px; height: 60px; margin: 15px 0; }
+        
+        .step-box { background: rgba(222, 255, 154, 0.05); border: 1px solid rgba(222, 255, 154, 0.2); border-radius: 8px; padding: 15px; margin-bottom: 10px; text-align: left; }
+        .btn-set { background-color: #deff9a; color: #000; padding: 10px; font-size: 14px; }
+        
+        .btn-saved-flash { background-color: #06d6a0 !important; color: #000 !important; transform: scale(0.98); }
+
+        .action-prep { background-color: #ffbe0b; color: #000; }
+        .action-asp { background-color: #3a86ff; color: white; }
+        .action-disp { background-color: #ff006e; color: white; }
+        .action-custom { background-color: #8338ec; color: white; margin-top: 15px; }
+
+        .panel { display: none; }
+        .panel.active { display: block; }
+        
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+        .tab-btn { background: #333; color: white; padding: 10px; border-radius: 6px; cursor: pointer; flex: 1; border: 1px solid transparent; }
+        .tab-btn.active { background: #deff9a; color: #000; font-weight: bold; }
+
+        .log-container { margin-top: 20px; text-align: left;}
+        .log-header { font-size: 12px; color: #888; margin-bottom: 5px; font-weight: bold; text-transform: uppercase;}
+        #log { font-family: monospace; font-size: 13px; color: #06d6a0; background: #000; padding: 12px; border-radius: 6px; height: 100px; overflow-y: auto; border: 1px solid #333; }
+        .log-out { color: #888; }
+        
+        .disabled { opacity: 0.3; pointer-events: none; }
+
+        .vol-inputs { display: flex; justify-content: space-between; gap: 10px; margin-top: 10px; }
+        .vol-inputs div { flex: 1; }
+        .vol-inputs label { font-size: 12px; color: #aaa; display: block; margin-bottom: 5px; }
+        .vol-inputs input { width: 100%; padding: 8px; box-sizing: border-box; background: #222; border: 1px solid #555; color: white; border-radius: 4px; font-size: 14px; text-align: center; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h1>Standard Pipette Protocol</h1>
+    <button class="btn-connect" id="btnConnect">Connect via USB</button>
+    <button class="btn-connect" id="btnDisconnect" style="display:none; background-color: #ff9f1c;">Pause / Stop Connection</button>
+
+    <div id="interface" class="disabled">
+        
+        <div class="tabs">
+            <div class="tab-btn active" onclick="switchTab('operation')">1. Operation</div>
+            <div class="tab-btn" onclick="switchTab('calibration')">2. Calibration</div>
+        </div>
+
+        <div id="operation" class="panel active">
+            <p style="color: #aaa; font-size: 14px; text-align: left; margin-bottom: 15px;">Follow the sequence from top to bottom for standard forward pipetting.</p>
+            <button class="action-prep" onclick="sendCmd('PREP')">1. Push to First Stop</button>
+            <button class="action-asp" onclick="sendCmd('ASP')">2. Aspirate Max Volume</button>
+            <button class="action-disp" onclick="sendCmd('DISP')">3. Dispense & Blowout</button>
+            
+            <div class="step-box" style="margin-top: 25px; border-color: rgba(131, 56, 236, 0.5);">
+                <strong style="color: #c77dff; font-size: 14px;">Custom Volume Control</strong>
+                <div class="vol-inputs">
+                    <div>
+                        <label>Max Usable (µL)</label>
+                        <input type="number" id="maxVol" value="67" step="1">
+                    </div>
+                    <div>
+                        <label>Target Volume (µL)</label>
+                        <input type="number" id="targetVol" value="25" step="1">
+                    </div>
+                </div>
+                <button class="action-custom" onclick="sendCustomVolume()">Aspirate Custom Volume</button>
+            </div>
+        </div>
+
+        <div id="calibration" class="panel">
+            <div style="display: flex; gap: 10px;">
+                <button class="btn-jog" onmousedown="sendCmd('REV')" onmouseup="sendCmd('STOP')">↑ UP</button>
+                <button class="btn-jog" onmousedown="sendCmd('FWD')" onmouseup="sendCmd('STOP')">↓ DOWN</button>
+            </div>
+            <button class="btn-stop" onclick="sendCmd('STOP')">🛑 STOP</button>
+
+            <div class="step-box">
+                <button class="btn-set" id="btnZero" onclick="saveCalibration('ZERO', 'btnZero', 'Step 1: Set Open Position (0)')">Step 1: Set Open Position (0)</button>
+            </div>
+            <div class="step-box">
+                <button class="btn-set" id="btnSet1" onclick="saveCalibration('SET1', 'btnSet1', 'Step 2: Save 1st Stop (Aspirate)')">Step 2: Save 1st Stop (Aspirate)</button>
+            </div>
+            
+            <div class="step-box">
+                <button class="btn-set" id="btnSet2" onclick="saveCalibration('SET2', 'btnSet2', 'Step 3: Save 2nd Stop (Blowout)')">Step 3: Save 2nd Stop (Blowout)</button>
+            </div>
+
+            <div class="step-box" style="margin-top: 25px; border-color: rgba(58, 134, 255, 0.5);">
+                <button class="action-asp" style="margin-top: 0;" onclick="sendCmd('RET_ZERO')">Step 4: Return to Open Position</button>
+            </div>
+
+            </div>
+
+    </div>
+
+    <div class="log-container">
+        <div class="log-header">Hardware Serial Feed</div>
+        <div id="log">Awaiting connection...</div>
+    </div>
+</div>
+
+<script>
+    let port, writer, reader;
+    let keepReading = false;
+    let isPaused = false;
+
+    // Load saved volumes to remember last position/state
+    window.onload = () => {
+        const savedMax = localStorage.getItem('maxVol');
+        const savedTarget = localStorage.getItem('targetVol');
+        if (savedMax) document.getElementById('maxVol').value = savedMax;
+        if (savedTarget) document.getElementById('targetVol').value = savedTarget;
+
+        // Auto-connect to previously authorized port
+        navigator.serial.getPorts().then((ports) => {
+            if (ports.length > 0) {
+                logApp("Found previously authorized device. Auto-connecting...");
+                connectToPort(ports[0]);
+            }
+        });
+    };
+
+    // Save state when volumes change
+    document.getElementById('maxVol').addEventListener('change', (e) => localStorage.setItem('maxVol', e.target.value));
+    document.getElementById('targetVol').addEventListener('change', (e) => localStorage.setItem('targetVol', e.target.value));
+
+    function logApp(msg) {
+        const logBox = document.getElementById('log');
+        logBox.innerHTML += `<div class="log-out">App -> ${msg}</div>`;
+        logBox.scrollTop = logBox.scrollHeight;
+    }
+
+    function logHardware(msg) {
+        const logBox = document.getElementById('log');
+        logBox.innerHTML += `<div>Nano <- ${msg}</div>`;
+        logBox.scrollTop = logBox.scrollHeight;
+    }
+
+    async function sendCmd(cmd) {
+        if(writer && !isPaused) {
+            try {
+                await writer.write(cmd + "\n");
+                logApp(cmd);
+            } catch (e) {
+                logApp("Error sending cmd: " + e);
+            }
+        } else if (isPaused) {
+            logApp("Connection paused. Cannot send: " + cmd);
+        } else {
+            logApp("Not connected.");
+        }
+    }
+
+    function sendCustomVolume() {
+        let maxVol = parseFloat(document.getElementById("maxVol").value);
+        let targetVol = parseFloat(document.getElementById("targetVol").value);
+
+        if (isNaN(maxVol) || isNaN(targetVol)) {
+            alert("Please enter valid numbers!");
+            return;
+        }
+        if (targetVol > maxVol) {
+            alert("Error: Target volume cannot be higher than your Max Usable volume!");
+            return;
+        }
+        if (targetVol <= 0) {
+            alert("Error: Volume must be greater than 0!");
+            return;
+        }
+        
+        sendCmd("VOL:" + targetVol + ":" + maxVol);
+    }
+
+    async function saveCalibration(cmd, btnId, originalText) {
+        await sendCmd(cmd); 
+        
+        const btn = document.getElementById(btnId);
+        btn.classList.add('btn-saved-flash');
+        btn.innerText = "✅ Saved to Nano EEPROM!";
+        
+        setTimeout(() => {
+            btn.classList.remove('btn-saved-flash');
+            btn.innerText = originalText;
+        }, 2000);
+    }
+
+    function switchTab(tabId) {
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        event.target.classList.add('active');
+    }
+
+    async function readLoop() {
+        while (port && port.readable && keepReading) {
+            const textDecoder = new TextDecoderStream();
+            const readableStreamClosed = port.readable.pipeTo(textDecoder.writable);
+            reader = textDecoder.readable.getReader();
+            
+            let buffer = "";
+            try {
+                while (keepReading) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
+                    if (value) {
+                        buffer += value;
+                        let lines = buffer.split('\n');
+                        buffer = lines.pop(); 
+                        for (let line of lines) {
+                            if (line.trim() !== "") {
+                                logHardware(line.trim());
+                            }
+                        }
+                    }
+                }
+            } catch (error) {
+                logApp("Hardware disconnected from read loop.");
+            } finally {
+                reader.releaseLock();
+            }
+        }
+    }
+
+    async function connectToPort(selectedPort) {
+        try {
+            port = selectedPort;
+            await port.open({ baudRate: 115200 });
+            
+            const textEncoder = new TextEncoderStream();
+            textEncoder.readable.pipeTo(port.writable);
+            writer = textEncoder.writable.getWriter();
+
+            keepReading = true;
+            isPaused = false;
+            readLoop();
+
+            updateUIConnected();
+            logApp("Link established. Ready for protocol.");
+        } catch (err) { 
+            logApp("Connection Error: " + err); 
+            updateUIDisconnected();
+        }
+    }
+
+    function updateUIConnected() {
+        document.getElementById('btnConnect').style.display = "none";
+        document.getElementById('btnDisconnect').style.display = "block";
+        document.getElementById('interface').classList.remove('disabled');
+        // document.getElementById('log').innerHTML = ""; // Optionally clear log on connect
+    }
+
+    function updateUIDisconnected() {
+        document.getElementById('btnConnect').style.display = "block";
+        document.getElementById('btnConnect').innerText = "Reconnect via USB";
+        document.getElementById('btnConnect').classList.remove('disabled');
+        document.getElementById('btnDisconnect').style.display = "none";
+        document.getElementById('interface').classList.add('disabled');
+        port = null;
+        writer = null;
+    }
+
+    async function disconnectPort() {
+        keepReading = false;
+        isPaused = true;
+        if (reader) {
+            try { await reader.cancel(); } catch(e) {}
+        }
+        if (port) {
+            try { await port.close(); } catch(e) {}
+        }
+        updateUIDisconnected();
+        logApp("Connection paused/stopped.");
+    }
+
+    document.getElementById('btnConnect').addEventListener('click', async () => {
+        try {
+            const selectedPort = await navigator.serial.requestPort();
+            connectToPort(selectedPort);
+        } catch (err) { 
+            logApp("Error: " + err); 
+        }
+    });
+
+    document.getElementById('btnDisconnect').addEventListener('click', async () => {
+        await disconnectPort();
+    });
+
+    navigator.serial.addEventListener("connect", (event) => {
+        logApp("Device plugged in. Auto-connecting...");
+        connectToPort(event.target);
+    });
+
+    navigator.serial.addEventListener("disconnect", (event) => {
+        logApp("Hardware physically disconnected.");
+        disconnectPort();
+    });
+</script>
+
+</body>
+</html>
